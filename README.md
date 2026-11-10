@@ -1,445 +1,102 @@
-[![Version](https://img.shields.io/npm/v/website-scraper.svg?style=flat)](https://www.npmjs.org/package/website-scraper)
-[![Downloads](https://img.shields.io/npm/dm/website-scraper.svg?style=flat)](https://www.npmjs.org/package/website-scraper)
-[![Node.js CI](https://github.com/website-scraper/node-website-scraper/actions/workflows/node.js.yml/badge.svg)](https://github.com/website-scraper/node-website-scraper)
-[![Code Coverage](https://qlty.sh/gh/website-scraper/projects/node-website-scraper/coverage.svg)](https://qlty.sh/gh/website-scraper/projects/node-website-scraper)
-[![Coverage Status](https://coveralls.io/repos/github/website-scraper/node-website-scraper/badge.svg?branch=master)](https://coveralls.io/github/website-scraper/node-website-scraper?branch=master)
+# mirra
 
+[![CI](https://github.com/acarsondave/mirra/actions/workflows/node.js.yml/badge.svg)](https://github.com/acarsondave/mirra/actions/workflows/node.js.yml)
 
-# website-scraper
+A command line tool that downloads a website so you can browse it offline. It covers the same ground as HTTrack and `wget --mirror`, and it also handles the sites those tools fail on: React/Vue/Next apps that render in the browser, lazy-loaded images, and sites behind Cloudflare and similar bot protection.
 
-[Options](#usage) | [Plugins](#plugins) | [Log and debug](#log-and-debug) | [Frequently Asked Questions](https://github.com/website-scraper/node-website-scraper/blob/master/docs/FAQ.md) | [Contributing](https://github.com/website-scraper/node-website-scraper/blob/master/CONTRIBUTING.md) | [Code of Conduct](https://github.com/website-scraper/node-website-scraper/blob/master/CODE_OF_CONDUCT.md)
-
-Download the website to the local directory (including all css, images, js, etc.)
-
-**Note:** by default dynamic websites (where content is loaded by js) may not be saved correctly because `website-scraper` doesn't execute js, it only parses http responses for html and css files. If you need to download a dynamic website take a look at [website-scraper-puppeteer](https://github.com/website-scraper/website-scraper-puppeteer).
-
-## Sponsors
-Maintenance of this project is made possible by all the [contributors](https://github.com/website-scraper/node-website-scraper/graphs/contributors) and [sponsors](https://github.com/sponsors/s0ph1e).
-If you'd like to sponsor this project and have your avatar or company logo appear below [click here](https://github.com/sponsors/s0ph1e). 💖
-
-<!-- sponsors --><a href="https://github.com/aivus"><img src="https:&#x2F;&#x2F;github.com&#x2F;aivus.png" width="60px" alt="User avatar: Illia Antypenko" /></a><a href="https://github.com/swissspidy"><img src="https:&#x2F;&#x2F;github.com&#x2F;swissspidy.png" width="60px" alt="User avatar: Pascal Birchler" /></a><a href="https://github.com/itscarlosrufo"><img src="https:&#x2F;&#x2F;github.com&#x2F;itscarlosrufo.png" width="60px" alt="User avatar: Carlos Rufo" /></a><a href="https://github.com/francescamarano"><img src="https:&#x2F;&#x2F;github.com&#x2F;francescamarano.png" width="60px" alt="User avatar: Francesca Marano" /></a><a href="https://github.com/github"><img src="https:&#x2F;&#x2F;github.com&#x2F;github.png" width="60px" alt="User avatar: GitHub" /></a><a href="https://github.com/Belrestro"><img src="https:&#x2F;&#x2F;github.com&#x2F;Belrestro.png" width="60px" alt="User avatar: Andrew Vorobiov" /></a><a href="https://github.com/Effiezhu"><img src="https:&#x2F;&#x2F;github.com&#x2F;Effiezhu.png" width="60px" alt="User avatar: " /></a><a href="https://github.com/madebyyusuf"><img src="https:&#x2F;&#x2F;github.com&#x2F;madebyyusuf.png" width="60px" alt="User avatar: Yusuf" /></a><!-- sponsors -->
-
-## Requirements
-* nodejs version >= 22.12.0
-* website-scraper since v5 is pure ESM (it doesn't work with CommonJS), [read more in release v5.0.0 docs](https://github.com/website-scraper/node-website-scraper/releases/tag/v5.0.0)
-
-## Installation
 ```
-npm install website-scraper
+$ mirra https://example.com -o example --sitemap
+· sitemap: seeded 35 URLs
+✓     1 html  https://example.com/
+✓     2 css   https://example.com/wp-content/themes/site/style.css
+...
+mirra: 231 files saved (231 via http, 4 via browser), 0 skipped, 30 errors
+open: example/example.com/index.html
 ```
+
+## Install
+
+```bash
+git clone https://github.com/acarsondave/mirra && cd mirra
+npm install
+npx patchright install chromium   # needed for JS rendering and bot checks
+npm link                          # optional, puts `mirra` on your PATH
+```
+
+You need Node 22 or newer. On a Linux server, also install `xvfb` (see [Bot protection](#bot-protection)).
 
 ## Usage
-```javascript
-import scrape from 'website-scraper'; // only as ESM, no CommonJS
-const options = {
-  urls: ['http://nodejs.org/'],
-  directory: '/path/to/save/'
-};
 
-// with async/await
-const result = await scrape(options);
-
-// with promise
-scrape(options).then((result) => {});
-```
-
-## options
-* [urls](#urls) - urls to download, *required*
-* [directory](#directory) - path to save files, *required*
-* [sources](#sources) - selects which resources should be downloaded
-* [recursive](#recursive) - follow hyperlinks in html files
-* [maxRecursiveDepth](#maxrecursivedepth) - maximum depth for hyperlinks
-* [maxDepth](#maxdepth) - maximum depth for all dependencies
-* [request](#request) - custom options for http module [got](https://github.com/sindresorhus/got#options)
-* [subdirectories](#subdirectories) - subdirectories for file extensions
-* [defaultFilename](#defaultfilename) - filename for index page
-* [prettifyUrls](#prettifyurls) - prettify urls
-* [ignoreErrors](#ignoreerrors) - whether to ignore errors on resource downloading
-* [urlFilter](#urlfilter) - skip some urls
-* [filenameGenerator](#filenamegenerator) - generate filename for downloaded resource
-* [requestConcurrency](#requestconcurrency) - set maximum concurrent requests
-* [plugins](#plugins) - plugins, allow to customize filenames, request options, response handling, saving to storage, etc.
-
-Default options you can find in [lib/config/defaults.js](https://github.com/website-scraper/node-website-scraper/blob/master/lib/config/defaults.js) or get them using 
-```javascript
-import defaultOptions from 'website-scraper/defaultOptions';
-```
-
-#### urls
-Array of objects which contain urls to download and filenames for them. **_Required_**.
-```javascript
-scrape({
-  urls: [
-    'http://nodejs.org/',	// Will be saved with default filename 'index.html'
-    {url: 'http://nodejs.org/about', filename: 'about.html'},
-    {url: 'http://blog.nodejs.org/', filename: 'blog.html'}
-  ],
-  directory: '/path/to/save'
-});
-```
-
-#### directory
-String, absolute path to directory where downloaded files will be saved. Directory should not exist. It will be created by scraper. **_Required_**.
-How to download website to existing directory and why it's not supported by default - check [here](https://github.com/website-scraper/node-website-scraper/blob/master/docs/FAQ.md#q-im-getting-directory-exists-error-can-i-save-website-to-existing-directory).
-
-#### sources
-Array of objects to download, specifies selectors and attribute values to select files for downloading. By default scraper tries to download all possible resources. Scraper uses cheerio to select html elements so `selector` can be any [selector that cheerio supports](https://github.com/cheeriojs/cheerio#selectors).
-```javascript
-// Downloading images, css files and scripts
-scrape({
-  urls: ['http://nodejs.org/'],
-  directory: '/path/to/save',
-  sources: [
-    {selector: 'img', attr: 'src'},
-    {selector: 'link[rel="stylesheet"]', attr: 'href'},
-    {selector: 'script', attr: 'src'}
-  ]
-});
-```
-
-#### recursive
-Boolean, if `true` scraper will follow hyperlinks in html files. Don't forget to set `maxRecursiveDepth` to avoid infinite downloading. Defaults to `false`.
-
-#### maxRecursiveDepth
-Positive number, maximum allowed depth for hyperlinks. Other dependencies will be saved regardless of their depth. Defaults to `null` - no maximum recursive depth set.
-
-#### maxDepth
-Positive number, maximum allowed depth for all dependencies. Defaults to `null` - no maximum depth set.
-In most of cases you need [maxRecursiveDepth](#maxRecursiveDepth) instead of this option.
-
-The difference between [maxRecursiveDepth](#maxRecursiveDepth) and [maxDepth](#maxDepth) is that
-* maxDepth is for all type of resources, so if you have
-  > maxDepth=1 AND html (depth 0) ⟶ html (depth 1) ⟶ img (depth 2)
-
-  last image will be filtered out by depth
-
-* maxRecursiveDepth is only for html resources, so if you have
-  > maxRecursiveDepth=1 AND html (depth 0) ⟶ html (depth 1) ⟶ img (depth 2)
-
-  only html resources with depth 2 will be filtered out, last image will be downloaded
-
-#### request
-Object, custom options for http module [got](https://github.com/sindresorhus/got#options) which is used inside website-scraper. Allows to set retries, cookies, userAgent, encoding, etc.
-```javascript
-// use same request options for all resources
-scrape({
-  urls: ['http://example.com/'],
-  directory: '/path/to/save',
-  request: {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Linux; Android 4.2.1; en-us; Nexus 4 Build/JOP40D) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19'
-    }
-  }
-});
-```
-
-#### subdirectories
-Array of objects, specifies subdirectories for file extensions. If `null` all files will be saved to `directory`.
-```javascript
-/* Separate files into directories:
-  - `img` for .jpg, .png, .svg (full path `/path/to/save/img`)
-  - `js` for .js (full path `/path/to/save/js`)
-  - `css` for .css (full path `/path/to/save/css`)
-*/
-scrape({
-  urls: ['http://example.com'],
-  directory: '/path/to/save',
-  subdirectories: [
-    {directory: 'img', extensions: ['.jpg', '.png', '.svg']},
-    {directory: 'js', extensions: ['.js']},
-    {directory: 'css', extensions: ['.css']}
-  ]
-});
-```
-
-#### defaultFilename
-String, filename for index page. Defaults to `index.html`.
-
-#### prettifyUrls
-Boolean, whether urls should be 'prettified', by having the `defaultFilename` removed. Defaults to `false`.
-
-#### ignoreErrors
-Boolean, if `true` scraper will continue downloading resources after error occurred, if `false` - scraper will finish process and return error. Defaults to `false`.
-Errors thrown by plugin actions while handling a resource (including [onResourceSaved](#onresourcesaved)) are treated the same way.
-
-#### urlFilter
-Function which is called for each url to check whether it should be scraped. Defaults to `null` - no url filter will be applied.
-```javascript
-// Links to other websites are filtered out by the urlFilter
-scrape({
-  urls: ['http://example.com/'],
-  urlFilter: function(url) {
-    return url.indexOf('http://example.com') === 0;
-  },
-  directory: '/path/to/save'
-});
-```
-
-#### filenameGenerator
-String (name of the bundled filenameGenerator). Filename generator determines path in file system where the resource will be saved.
-
-###### byType (default)
-When the `byType` filenameGenerator is used the downloaded files are saved by extension (as defined by the `subdirectories` setting) or directly in the `directory` folder, if no subdirectory is specified for the specific extension.
-
-###### bySiteStructure
-When the `bySiteStructure` filenameGenerator is used the downloaded files are saved in `directory` using same structure as on the website:
-- `/` => `DIRECTORY/example.com/index.html`
-- `/about` => `DIRECTORY/example.com/about/index.html`
-- `//cdn.example.com/resources/jquery.min.js` => `DIRECTORY/cdn.example.com/resources/jquery.min.js`
-
-```javascript
-scrape({
-  urls: ['http://example.com/'],
-  urlFilter: (url) => url.startsWith('http://example.com'), // Filter links to other websites
-  recursive: true,
-  maxRecursiveDepth: 10,
-  filenameGenerator: 'bySiteStructure',
-  directory: '/path/to/save'
-});
-```
-
-#### requestConcurrency
-Number, maximum amount of concurrent requests. Defaults to `Infinity`.
-
-
-#### plugins
-
-Plugins allow to extend scraper behaviour
-
-* [Built-in plugins](#built-in-plugins)
-* [Existing plugins](#existing-plugins)
-* [Create plugin](#create-plugin)
-* Create action
-    * [beforeStart](#beforestart)
-    * [afterFinish](#afterfinish)
-    * [error](#error)
-    * [beforeRequest](#beforerequest)
-    * [afterResponse](#afterresponse)
-    * [onResourceSaved](#onresourcesaved)
-    * [onResourceError](#onresourceerror)
-    * [saveResource](#saveresource)
-    * [generateFilename](#generatefilename)
-    * [getReference](#getreference)
-
-##### Built-in plugins
-Scraper has built-in plugins which are used by default if not overwritten with custom plugins. You can find them in [lib/plugins](lib/plugins) directory. These plugins are intended for internal use but can be copied if the behaviour of the plugins needs to be extended / changed.
-
-##### Existing plugins
-* [website-scraper-puppeteer](https://github.com/website-scraper/website-scraper-puppeteer) - download dynamic (rendered with js) websites using puppeteer
-* [website-scraper-existing-directory](https://github.com/website-scraper/website-scraper-existing-directory) - save files to existing directory
-
-##### Create plugin
-
-Plugin is object with `.apply` method, can be used to change scraper behavior.
-
-`.apply` method takes one argument - `registerAction` function which allows to add handlers for different actions. Action handlers are functions that are called by scraper on different stages of downloading website. For example `generateFilename` is called to generate filename for resource based on its url, `onResourceError` is called when error occurred during requesting/handling/saving resource.
-
-You can add multiple plugins which register multiple actions. Plugins will be applied in order they were added to options.
-All actions should be regular or async functions. Scraper will call actions of specific type in order they were added and use result (if supported by action type) from last action call.
-
-List of supported actions with detailed descriptions and examples you can find below.
-```javascript
-class MyPlugin {
-	apply(registerAction) {
-		registerAction('beforeStart', async ({options}) => {});
-		registerAction('afterFinish', async () => {});
-		registerAction('error', async ({error}) => {console.error(error)});
-		registerAction('beforeRequest', async ({resource, requestOptions}) => ({requestOptions}));
-		registerAction('afterResponse', async ({response}) => response.body);
-		registerAction('onResourceSaved', ({resource}) => {});
-		registerAction('onResourceError', ({resource, error}) => {});
-		registerAction('saveResource', async ({resource}) => {});
-		registerAction('generateFilename', async ({resource}) => {})
-		registerAction('getReference', async ({resource, parentResource, originalReference}) => {})
-	}
-}
-
-scrape({
-  urls: ['http://example.com/'],
-  directory: '/path/to/save',
-  plugins: [ new MyPlugin() ]
-});
-```
-
-##### beforeStart
-Action `beforeStart` is called before downloading is started. It can be used to initialize something needed for other actions.
-
-Parameters - object which includes:
-* options - scraper normalized options object passed to scrape function
-* utils - scraper [utils](https://github.com/website-scraper/node-website-scraper/blob/master/lib/utils/index.js)
-
-```javascript
-registerAction('beforeStart', async ({options, utils}) => {});
-```
-
-##### afterFinish
-Action afterFinish is called after all resources downloaded or error occurred. Good place to shut down/close something initialized and used in other actions.
-
-No parameters.
-```javascript
-registerAction('afterFinish', async () => {});
-```
-
-##### error
-Action error is called when error occurred.
-
-Parameters - object which includes:
-* error - Error object
-```javascript
-registerAction('error', async ({error}) => {console.log(error)});
-```
-
-##### beforeRequest
-Action beforeRequest is called before requesting resource. You can use it to customize request options per resource, for example if you want to use different encodings for different resource types or add something to querystring.
-
-Parameters - object which includes:
-* resource - [Resource](https://github.com/website-scraper/node-website-scraper/blob/master/lib/resource.js) object
-* requestOptions - default options for http module [got](https://github.com/sindresorhus/got#options) or options returned by previous beforeRequest action call
-
-Should return object which includes custom options for [got](https://github.com/sindresorhus/got#options) module.
-If multiple actions `beforeRequest` added - scraper will use `requestOptions` from last one.
-```javascript
-// Add ?myParam=123 to querystring for resource with url 'http://example.com'
-registerAction('beforeRequest', async ({resource, requestOptions}) => {
-	if (resource.getUrl() === 'http://example.com') {
-		return {requestOptions: extend(requestOptions, {searchParams: {myParam: 123}})};
-	}
-	return {requestOptions};
-});
-
-// Add random delays between requests
-registerAction('beforeRequest', async ({resource, requestOptions}) => {
-	const time = Math.round(Math.random() * 10000);
-	await new Promise((resolve) => setTimeout(resolve, time));
-	return {requestOptions};
-});
-```
-
-##### afterResponse
-Action afterResponse is called after each response, it allows to customize resource or reject its saving.
-
-Parameters - object which includes:
-* response - response object from http module [got](https://github.com/sindresorhus/got#response)
-
-Return resolved `Promise` with:
-  * object if the resource should be saved, object should contain next properties:
-    * `body` (string, required)
-    * `encoding` (`binary` or `utf8`) is used to save the file, binary is used by default.
-    * `metadata` (object) - everything you want to save for this resource (like headers, original text, timestamps, etc.), scraper will not use this field at all, it is only for the result
-  * or null if the resource should be skipped
-
-If multiple actions `afterResponse` are added - the scraper will use the result from the last one.
-```javascript
-// Do not save resources that responded with 404 not found status code
-registerAction('afterResponse', ({response}) => {
-	if (response.statusCode === 404) {
-		return null;
-	} else {
-		return {
-			body: response.body,
-			encoding: 'utf8',
-			metadata: {
-				headers: response.headers,
-				someOtherData: [ 1, 2, 3 ]
-			}
-		}
-	}
-});
-```
-
-##### onResourceSaved
-Action onResourceSaved is called each time after a resource is saved (to file system or other storage with 'saveResource' action).
-
-Parameters - object which includes:
-* resource - [Resource](https://github.com/website-scraper/node-website-scraper/blob/master/lib/resource.js) object
-
-Scraper ignores the result returned from this action. It doesn't wait for the action before saving other resources, but it waits for all pending onResourceSaved and onResourceError actions before running afterFinish and resolving `scrape()`. If the action throws or rejects, it is handled like any other resource error: [onResourceError](#onresourceerror) is called for the resource, and if [ignoreErrors](#ignoreerrors) is `false` `scrape()` is rejected with this error. Since scraper doesn't wait for this action, the rejection happens after all resources are downloaded and pending actions are finished, not immediately.
-```javascript
-registerAction('onResourceSaved', ({resource}) => console.log(`Resource ${resource.url} saved!`));
-```
-
-##### onResourceError
-Action onResourceError is called each time a resource's downloading/handling/saving fails
-
-Parameters - object which includes:
-* resource - [Resource](https://github.com/website-scraper/node-website-scraper/blob/master/lib/resource.js) object
-* error - Error object
-
-Scraper ignores the result returned from this action. Like onResourceSaved, `scrape()` waits for pending onResourceError actions before running afterFinish. If the action throws or rejects, the error is only logged to the `website-scraper:warn` logger (see [Log and debug](#log-and-debug)).
-```javascript
-registerAction('onResourceError', ({resource, error}) => console.log(`Resource ${resource.url} has error ${error}`));
-```
-
-##### generateFilename
-Action generateFilename is called to determine path in file system where the resource will be saved.
-
-Parameters - object which includes:
-* resource - [Resource](https://github.com/website-scraper/node-website-scraper/blob/master/lib/resource.js) object
-* responseData - object returned from afterResponse action, contains `url`, `mimeType`, `body`, `metadata` properties
-
-Should return object which includes:
-* filename - String, relative to `directory` path for specified resource
-
-If multiple actions `generateFilename` added - scraper will use result from last one.
-
-Default plugins which generate filenames: [byType](https://github.com/website-scraper/node-website-scraper/blob/master/lib/plugins/generate-filenamy-by-type-plugin.js), [bySiteStructure](https://github.com/website-scraper/node-website-scraper/blob/master/lib/plugins/generate-filenamy-by-site-structure-plugin.js)
-```javascript
-// Generate random filename
-import crypto from 'crypto';
-registerAction('generateFilename', ({resource}) => {
-  return {filename: crypto.randomBytes(20).toString('hex')};
-});
-```
-
-##### getReference
-Action getReference is called to retrieve reference to resource for parent resource. Can be used to customize reference to resource, for example, update missing resource (which was not loaded) with absolute url. By default reference is relative path from `parentResource` to `resource` (see [GetRelativePathReferencePlugin](https://github.com/website-scraper/node-website-scraper/blob/master/lib/plugins/get-relative-path-reference-plugin.js)).
-
-Parameters - object which includes:
-* resource - [Resource](https://github.com/website-scraper/node-website-scraper/blob/master/lib/resource.js) object
-* parentResource - [Resource](https://github.com/website-scraper/node-website-scraper/blob/master/lib/resource.js) object
-* originalReference - string, original reference to `resource` in `parentResource`
-
-Should return object which includes:
-* reference - string or null, reference to `resource` for `parentResource`. If you don't want to update reference - return null
-
-If multiple actions `getReference` added - scraper will use result from last one.
-```javascript
-// Use relative filenames for saved resources and absolute urls for missing
-registerAction('getReference', ({resource, parentResource, originalReference}) => {
-  if (!resource) {
-    return {reference: parentResource.url + originalReference}
-  }
-  return {reference: utils.getRelativePath(parentResource.filename, resource.filename)};
-});
-```
-
-
-##### saveResource
-Action saveResource is called to save file to some storage. Use it to save files where you need: to dropbox, amazon S3, existing directory, etc. By default all files are saved in local file system to new directory passed in `directory` option (see [SaveResourceToFileSystemPlugin](https://github.com/website-scraper/node-website-scraper/blob/master/lib/plugins/save-resource-to-fs-plugin.js)).
-
-Parameters - object which includes:
-* resource - [Resource](https://github.com/website-scraper/node-website-scraper/blob/master/lib/resource.js) object
-
-If multiple actions `saveResource` added - resource will be saved to multiple storages.
-```javascript
-registerAction('saveResource', async ({resource}) => {
-  const filename = resource.getFilename();
-  const text = resource.getText();
-  await saveItSomewhere(filename, text);
-});
-```
-
-## result
-Array of [Resource](https://github.com/website-scraper/node-website-scraper/blob/master/lib/resource.js) objects containing:
-- `url`: url of loaded page
-- `filename`: filename where page was saved (relative to `directory`)
-- `children`: array of children Resources
-
-## Log and debug
-This module uses [debug](https://github.com/visionmedia/debug) to log events. To enable logs you should use environment variable `DEBUG`.
-The next command will log everything from website-scraper
 ```bash
-export DEBUG=website-scraper*; node app.js
+mirra https://example.com -o site                          # follows links 3 levels deep on the same domain
+mirra https://docs.example.com/v2/ -o docs -s prefix -d 10  # only pages under /v2/
+mirra https://example.com -o site -n 200 --sitemap -x "*/cart*" "*.zip"
+mirra https://app.example.com -o app --render always --no-js
+mirra https://example.com/account -o acct --cookies cookies.txt
+mirra https://example.com -o site --no-browser              # plain HTTP only, fastest
 ```
 
-Module has different loggers for levels: `website-scraper:error`, `website-scraper:warn`, `website-scraper:info`, `website-scraper:debug`, `website-scraper:log`. Please read [debug](https://github.com/visionmedia/debug) documentation to find how to include/exclude specific loggers.
+Open `<output>/<host>/index.html` in a browser afterwards. Each run also writes `mirra-report.json`, which lists every file that was saved, skipped or failed. To confirm that a mirror has no broken references:
+
+```bash
+npm run check-mirror -- site https://example.com
+```
+
+`mirra --help` lists every option.
+
+## How it differs from HTTrack
+
+| | HTTrack | mirra |
+|---|---|---|
+| Client-rendered pages | Saves the empty app shell | Detects the shell and renders it in a browser (`--render auto`) |
+| Lazy-loaded images | Missed | Scrolls rendered pages and reads `data-src` / `data-srcset` |
+| TLS and HTTP/2 fingerprint | Easy to identify as a bot | Matches Chrome or Firefox, via [impit](https://github.com/apify/impit) |
+| Bot checks | Blocked | Retries in a patched Chromium and reuses its cookies |
+| Links to pages that weren't downloaded | Point at a missing local file | Point at the live URL |
+| Discovery | Links | Links and sitemaps (`--sitemap`) |
+| Logged-in content | Copy browser requests | `--cookies cookies.txt` |
+
+By default mirra makes 32 requests in parallel (16 per host) and doesn't wait between them. It backs off when a server returns 429 or 5xx, and honours `Retry-After`. Add `--delay` and `--respect-robots` if you are crawling a site you don't run.
+
+## Bot protection
+
+Every request starts as a plain HTTP request with a browser fingerprint. Most sites never get further than that. If a response looks like a bot check (Cloudflare, DataDome, PerimeterX, Imperva, Akamai, AWS WAF and a few others, see `cli/detect.js`), mirra retries it a couple of times. Checks triggered by request bursts usually pass on a retry. If the check is still there, mirra loads the URL in [patchright](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright), a Playwright build with the common automation leaks patched, waits for the check to finish, and passes its cookies back to the HTTP client.
+
+Headless Chrome is easy to detect, so mirra avoids it where it can. On Linux it opens a normal browser window on a private Xvfb display, and on macOS and Windows it uses an off-screen window. If Google Chrome is installed (`npx patchright install chrome`), mirra uses it instead of the bundled Chromium. `npm run stealth-check` runs two public bot-detection pages against your setup.
+
+mirra does not solve CAPTCHAs. When a site asks for a human click, such as Cloudflare's "Verify you are human" checkbox, run with `--headful`, tick it yourself, and the crawl carries on. Datacenter IPs get those checks much more often than home connections, so `--proxy` helps.
+
+Pages that never get past a check are not saved. They are listed in the report, and links to them point at the live site.
+
+## Design
+
+The parsing, link rewriting and file layout come from [website-scraper](https://github.com/website-scraper/node-website-scraper). mirra changes it in a few places:
+
+- `lib/request.js` accepts a `transport` function, which replaces `got` for every request.
+- Links (`<a href>`) are filtered by crawl scope. Images, CSS, scripts and fonts load from any host, which matters for CDNs.
+- References to pages that weren't downloaded are rewritten to absolute URLs. If a page was reached through a different link, the reference points at the local copy.
+- `data-srcset` is parsed like `srcset`.
+
+Everything else lives in `cli/`: the transport (`transport.js`), the browser (`browser.js`), the cookie jar the two share (`cookies.js`), and the CLI itself (`mirra.js`).
+
+The upstream test suite still runs, along with tests for the changes above:
+
+```bash
+npm test
+```
+
+## Limitations
+
+- Every run writes a fresh directory. There is no incremental update mode like `httrack --update` yet.
+- Forms, search, checkout and anything else that needs a server won't work offline.
+- Rendered pages keep their scripts unless you pass `--no-js`. Some single-page apps call their APIs again when they load, so a fully static snapshot (`--no-js`) can be the more faithful copy.
+
+Only mirror sites you own or have permission to copy.
+
+## Credits
+
+mirra is built on [website-scraper](https://github.com/website-scraper/node-website-scraper) by Sofiia Antypenko and contributors, and uses [impit](https://github.com/apify/impit) by Apify and [patchright](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright). Thanks to all of them.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
