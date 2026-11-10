@@ -5,7 +5,7 @@ import '../../utils/assertions.js';
 import nock from 'nock';
 import fs from 'fs';
 import sinon from 'sinon';
-import scrape from 'website-scraper';
+import scrape from 'mirra';
 import Scraper from '../../../lib/scraper.js';
 
 const testDirname = './test/functional/redirect/.tmp';

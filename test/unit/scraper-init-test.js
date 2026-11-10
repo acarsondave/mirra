@@ -5,7 +5,7 @@ import '../utils/assertions.js';
 import Scraper from '../../lib/scraper.js';
 import Resource from '../../lib/resource.js';
 
-import defaultOptions from 'website-scraper/defaultOptions';
+import defaultOptions from 'mirra/defaultOptions';
 
 const testDirname = './test/unit/.scraper-init-test';
 const urls = [ 'http://example.com' ];

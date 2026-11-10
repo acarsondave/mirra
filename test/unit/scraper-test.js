@@ -8,7 +8,7 @@ import Scraper from '../../lib/scraper.js';
 import Resource from '../../lib/resource.js';
 import * as plugins from '../../lib/plugins/index.js';
 
-import defaultOptions from 'website-scraper/defaultOptions';
+import defaultOptions from 'mirra/defaultOptions';
 
 
 const testDirname = './test/unit/.scraper-test';

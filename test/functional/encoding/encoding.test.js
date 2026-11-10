@@ -1,7 +1,7 @@
 import '../../utils/assertions.js';
 import nock from 'nock';
 import fs from 'fs/promises';
-import scrape from 'website-scraper';
+import scrape from 'mirra';
 
 const testDirname = './test/functional/encoding/.tmp';
 const mockDirname = './test/functional/encoding/mocks';

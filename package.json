@@ -1,8 +1,7 @@
 {
-  "name": "website-scraper",
-  "version": "6.0.0",
-  "description": "Download website to a local directory (including all css, images, js, etc.)",
-  "readmeFilename": "README.md",
+  "name": "mirra",
+  "version": "0.1.0",
+  "description": "Download websites for offline browsing, including JavaScript-heavy and Cloudflare-protected sites",
   "type": "module",
   "exports": {
     ".": "./index.mjs",
@@ -11,40 +10,44 @@
   "scripts": {
     "test": "c8 --all --reporter=text --reporter=lcov mocha --recursive --timeout 7000 ./test/unit/ ./test/functional",
     "test-e2e": "mocha --timeout 300000 ./test/e2e/*-test.js",
-    "eslint": "eslint lib index.mjs"
+    "eslint": "eslint lib cli scripts index.mjs",
+    "stealth-check": "node scripts/stealth-check.mjs",
+    "check-mirror": "node scripts/check-mirror.mjs"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/website-scraper/node-website-scraper.git"
+    "url": "git+https://github.com/acarsondave/mirra.git"
   },
   "keywords": [
-    "scrape",
-    "scraper",
-    "download",
-    "web",
-    "url",
-    "page",
-    "site",
-    "html",
-    "css",
-    "image",
-    "js"
+    "httrack",
+    "website-mirror",
+    "offline",
+    "crawler",
+    "website-downloader",
+    "cli",
+    "playwright",
+    "tls-fingerprint"
   ],
-  "author": "Sofiia Antypenko <sofiia@antypenko.dev>",
+  "author": "Acarson Dave (https://github.com/acarsondave)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/website-scraper/node-website-scraper/issues"
+    "url": "https://github.com/acarsondave/mirra/issues"
   },
-  "homepage": "https://github.com/website-scraper/node-website-scraper",
+  "homepage": "https://github.com/acarsondave/mirra#readme",
   "dependencies": {
     "cheerio": "^1.1.2",
+    "commander": "^15.1.0",
     "css-url-parser": "^1.0.0",
     "debug": "^4.3.1",
     "filenamify": "^7.0.0",
     "got": "^16.1.0",
+    "impit": "^0.14.8",
     "normalize-url": "^10.0.0",
     "p-queue": "^10.0.0",
-    "srcset": "^5.0.0"
+    "patchright": "^1.64.3",
+    "robots-parser": "^3.0.1",
+    "srcset": "^5.0.0",
+    "tough-cookie": "^6.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -59,9 +62,18 @@
   },
   "files": [
     "index.mjs",
-    "lib"
+    "lib",
+    "cli",
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
-    "node": ">=22.12.0"
-  }
+    "node": ">=22"
+  },
+  "bin": {
+    "mirra": "./cli/mirra.js"
+  },
+  "contributors": [
+    "Sofiia Antypenko <sofiia@antypenko.dev> (website-scraper)"
+  ]
 }

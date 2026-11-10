@@ -5,7 +5,7 @@ import '../../utils/assertions.js';
 import nock from 'nock';
 import fs from 'fs';
 import * as cheerio from 'cheerio';
-import scrape from 'website-scraper';
+import scrape from 'mirra';
 
 const testDirname = './test/functional/binary-resources/.tmp';
 const mockDirname = './test/functional/binary-resources/mocks';

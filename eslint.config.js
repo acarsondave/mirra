@@ -5,6 +5,11 @@ import globals from 'globals';
 export default [
 	js.configs.recommended,
 	{
+		files: ['cli/**/*.js', 'scripts/**/*.mjs'],
+		// browser globals: code passed to page.evaluate() runs in the page
+		languageOptions: { ecmaVersion: 2024, sourceType: 'module', globals: { ...globals.node, ...globals.browser } }
+	},
+	{
 		files: ['lib/**/*.js', 'index.mjs'],
 		plugins: {
 			'@stylistic': stylistic

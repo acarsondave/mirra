@@ -3,7 +3,7 @@ chai.should();
 import '../../utils/assertions.js';
 import nock from 'nock';
 import fs from 'fs';
-import scrape from 'website-scraper';
+import scrape from 'mirra';
 
 const testDirname = './test/functional/base/.tmp2';
 

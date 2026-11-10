@@ -1,4 +1,4 @@
-import scrape from 'website-scraper';
+import scrape from 'mirra';
 import fs from 'fs';
 import * as chai from 'chai';
 
