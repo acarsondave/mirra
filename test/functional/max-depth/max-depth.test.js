@@ -4,7 +4,7 @@ chai.should();
 import '../../utils/assertions.js';
 import nock from 'nock';
 import fs from 'fs';
-import scrape from 'website-scraper';
+import scrape from 'mirra';
 
 const testDirname = './test/functional/max-depth/.tmp';
 const mockDirname = './test/functional/max-depth/mocks';
@@ -156,8 +156,8 @@ describe('Functional: maxDepth and maxRecursiveDepth ', () => {
 			pageASaved.should.contain('<a href="pageC.html"');
 
 			const pageBSaved = fs.readFileSync(testDirname + '/pageB.html').toString();
-			// todo: should we change reference here because pageC was already downloaded?
-			pageBSaved.should.contain('<a href="/pageC.html"'); // reference to pageC was not changed here because it > maxRecursiveDepth
+			// pageC is too deep to follow from pageB, but pageA already saved it
+			pageBSaved.should.contain('<a href="pageC.html"');
 		});
 	});
 
